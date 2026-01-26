@@ -1,0 +1,8 @@
+def pul_11_avg(*num):
+    if len(num) == 0:
+        print(0)
+    else:
+        print(sum(num) / len(num))
+
+
+pul_11_avg(1, 2, 3, 4, 5)
