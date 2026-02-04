@@ -1,0 +1,69 @@
+import numpy as np
+import pandas as pd
+
+df = pd.DataFrame({
+    "age": [25, "N/A", 40, 33, "?"],
+    "income": [50000, 60000, None, "unknown", 80000],
+    "churned": [0, 1, 0, 1, 0],
+})
+
+tokens = ["N/A","NA","?","unknown","not reported"]
+for c in df.columns:
+    for i in range(len(df)):
+        if df.at[i,c] in tokens:
+            df.at[i,c] = np.nan
+
+df["age"] = df["age"].astype(float)
+df["income"] = df["income"].astype(float)
+
+col_miss = {}
+for c in df.columns:
+    count=0
+    for v in df[c]:
+        if pd.isna(v): count+=1
+    col_miss[c] = count/len(df)*100
+
+row_miss = []
+for i in range(len(df)):
+    count=0
+    for c in df.columns:
+        if pd.isna(df.at[i,c]): count+=1
+    row_miss.append(count/len(df.columns)*100)
+
+df_A = df.copy()
+drop_rows=[]
+for i in range(len(df_A)):
+    if pd.isna(df_A.at[i,"age"]) or pd.isna(df_A.at[i,"income"]):
+        drop_rows.append(i)
+df_A = df_A.drop(drop_rows).reset_index(drop=True)
+
+df_B = df.copy()
+for c in ["age","income"]:
+    total=0; cnt=0
+    for v in df_B[c]:
+        if not pd.isna(v): total+=v; cnt+=1
+    mean=total/cnt
+    df_B[c+"_missing"]=0
+    for i in range(len(df_B)):
+        if pd.isna(df_B.at[i,c]):
+            df_B.at[i,c]=mean
+            df_B.at[i,c+"_missing"]=1
+
+def stats(df,cols):
+    out={}
+    for c in cols:
+        total=0; cnt=0
+        for v in df[c]: total+=v; cnt+=1
+        mean=total/cnt
+        s=0
+        for v in df[c]: s+=(v-mean)**2
+        out[c]={"mean":mean,"std":(s/cnt)**0.5}
+    return out
+
+stats_A = stats(df_A, ["age","income"])
+stats_B = stats(df_B, ["age","income"])
+
+print(df_A)
+print(df_B)
+print("Stats A:", stats_A)
+print("Stats B:", stats_B)
