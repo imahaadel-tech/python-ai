@@ -1,0 +1,35 @@
+import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    "age": ["25", "30", "unknown"],
+    "income": ["$50,000", "$60,000", None],
+    "signup": ["2024-01-01", "01/05/2024", "not a date"],
+})
+
+def normalize_schema(df):
+    num_cols=[]; curr_cols=[]; date_cols=[]
+    for c in df.columns:
+        num=True; curr=True; date=True
+        for v in df[c]:
+            try: float(v)
+            except: num=False
+            try: float(str(v).replace("$","").replace(",",""))
+            except: curr=False
+            try: pd.to_datetime(v)
+            except: date=False
+        if num: num_cols.append(c)
+        if curr: curr_cols.append(c)
+        if date: date_cols.append(c)
+    for c in num_cols:
+        df[c]=[float(v) if v not in [None,"unknown"] else np.nan for v in df[c]]
+    for c in curr_cols:
+        df[c]=[float(str(v).replace("$","").replace(",","")) if v not in [None,"unknown"] else np.nan for v in df[c]]
+    for c in date_cols:
+        df[c]=[pd.to_datetime(v, errors="coerce") for v in df[c]]
+    nan_counts={c: df[c].isna().sum() for c in df.columns}
+    return df, nan_counts
+
+df, nan_counts = normalize_schema(df)
+print(df)
+print("NaN counts:", nan_counts)
